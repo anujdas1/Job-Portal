@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary-hue: 210;   /* blueish */
+  --secondary-hue: 340; /* rose */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primary-hue: 210;
+    --secondary-hue: 340;
+  }
+}
