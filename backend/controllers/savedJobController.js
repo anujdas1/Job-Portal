@@ -1,38 +1,58 @@
-// controllers/savedJobController.js
 const SavedJob = require('../models/SavedJob');
 
-// GET /api/saved-jobs?userId=... – list saved jobs for a user (must match token)
+/**
+ * POST /api/saved-jobs/:jobId
+ * Candidate - save a job
+ */
+exports.saveJob = async (req, res, next) => {
+  try {
+    const saved = await SavedJob.create({
+      candidate: req.dbUser._id,
+      job: req.params.jobId,
+    });
+    res.status(201).json(saved);
+  } catch (err) {
+    if (err.code === 11000) return res.status(409).json({ error: 'Already saved' });
+    next(err);
+  }
+};
+
+/**
+ * DELETE /api/saved-jobs/:jobId
+ * Candidate - unsave a job
+ */
+exports.unsaveJob = async (req, res, next) => {
+  try {
+    await SavedJob.findOneAndDelete({ candidate: req.dbUser._id, job: req.params.jobId });
+    res.json({ message: 'Removed from saved' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * GET /api/saved-jobs
+ * Candidate - list saved jobs
+ */
 exports.listSavedJobs = async (req, res, next) => {
   try {
-    const userId = req.query.userId || req.user.id;
-    if (userId !== req.user.id) {
-      return res.status(403).json({ success: false, error: 'Not authorized', statusCode: 403 });
-    }
-    const saved = await SavedJob.find({ userId }).populate('jobId', 'title location');
-    res.json({ success: true, data: saved });
+    const saved = await SavedJob.find({ candidate: req.dbUser._id })
+      .populate({ path: 'job', populate: { path: 'recruiter', select: 'name company companyLogo' } })
+      .sort({ createdAt: -1 });
+    res.json(saved);
   } catch (err) {
     next(err);
   }
 };
 
-// POST /api/saved-jobs – add a saved job (candidate only)
-exports.addSavedJob = async (req, res, next) => {
+/**
+ * GET /api/saved-jobs/ids
+ * Candidate - list saved job IDs (for quick lookup in feed)
+ */
+exports.savedJobIds = async (req, res, next) => {
   try {
-    const { jobId } = req.body;
-    const saved = new SavedJob({ userId: req.user.id, jobId });
-    await saved.save();
-    res.status(201).json({ success: true, data: saved });
-  } catch (err) {
-    next(err);
-  }
-};
-
-// DELETE /api/saved-jobs/:id – remove a saved job (must belong to user)
-exports.removeSavedJob = async (req, res, next) => {
-  try {
-    const saved = await SavedJob.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
-    if (!saved) return res.status(404).json({ success: false, error: 'Saved job not found', statusCode: 404 });
-    res.json({ success: true, message: 'Removed saved job' });
+    const saved = await SavedJob.find({ candidate: req.dbUser._id }).select('job');
+    res.json(saved.map((s) => String(s.job)));
   } catch (err) {
     next(err);
   }

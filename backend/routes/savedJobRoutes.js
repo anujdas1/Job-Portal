@@ -1,28 +1,14 @@
-// routes/savedJobRoutes.js
 const express = require('express');
-const { body } = require('express-validator');
-const {
-  listSavedJobs,
-  addSavedJob,
-  removeSavedJob,
-} = require('../controllers/savedJobController');
-const { verifyToken, requireRole } = require('../middlewares/auth');
-
 const router = express.Router();
+const { requireAuth } = require('@clerk/express');
+const { attachUser, requireRole } = require('../middlewares/authMiddleware');
+const ctrl = require('../controllers/savedJobController');
 
-// List saved jobs – any authenticated user (returns only their own)
-router.get('/', verifyToken, listSavedJobs);
+router.use(requireAuth(), attachUser, requireRole('candidate'));
 
-// Candidate adds a saved job
-router.post(
-  '/',
-  verifyToken,
-  requireRole('candidate'),
-  [body('jobId').notEmpty()],
-  addSavedJob
-);
-
-// Candidate removes a saved job
-router.delete('/:id', verifyToken, requireRole('candidate'), removeSavedJob);
+router.get('/', ctrl.listSavedJobs);
+router.get('/ids', ctrl.savedJobIds);
+router.post('/:jobId', ctrl.saveJob);
+router.delete('/:jobId', ctrl.unsaveJob);
 
 module.exports = router;

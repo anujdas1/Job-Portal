@@ -1,188 +1,113 @@
-import { useState, useCallback } from "react";
-import { useDropzone } from "react-dropzone";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import api from "@/api/axiosClient";
-import { Upload, FileText, X, CheckCircle } from "lucide-react";
+import { useState, useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
+import { X, Upload, FileText, AlertCircle } from 'lucide-react';
+import { applyToJob } from '@/api/applications';
+import './ApplicationModal.css';
 
-export default function ApplicationModal({ open, onOpenChange, job }) {
-  const [file, setFile] = useState(null);
-  const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
+export default function ApplicationModal({ job, onClose, onSuccess }) {
+  const [resumeFile, setResumeFile] = useState(null);
+  const [coverLetter, setCoverLetter] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
-    if (rejectedFiles.length > 0) {
-      setError("Only PDF files up to 5 MB are accepted");
-      return;
-    }
-    const f = acceptedFiles[0];
-    if (!f) return;
-    setError("");
-    setFile(f);
+  const onDrop = useCallback((acceptedFiles) => {
+    if (acceptedFiles[0]) setResumeFile(acceptedFiles[0]);
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
+    accept: { 'application/pdf': ['.pdf'], 'application/msword': ['.doc'], 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'] },
+    maxSize: 5 * 1024 * 1024,
     multiple: false,
-    accept: { "application/pdf": [".pdf"] },
-    maxSize: 5 * 1024 * 1024, // 5 MB
   });
 
-  const removeFile = () => {
-    setFile(null);
-    setError("");
-  };
-
-  const handleSubmit = async () => {
-    if (!file) {
-      setError("Please select a resume file");
-      return;
-    }
-    setSubmitting(true);
-    setError("");
-
-    const formData = new FormData();
-    formData.append("jobId", job._id || job.id);
-    formData.append("resume", file);
-
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!resumeFile) { setError('Please upload your resume'); return; }
+    setLoading(true);
+    setError('');
     try {
-      await api.post("/api/applications", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setSuccess(true);
-      setTimeout(() => {
-        onOpenChange(false);
-        // Reset state for next open
-        setFile(null);
-        setSuccess(false);
-      }, 1500);
-    } catch (e) {
-      setError(
-        e.response?.data?.message ||
-          "Failed to submit application. Please try again."
-      );
+      const fd = new FormData();
+      fd.append('jobId', job._id);
+      fd.append('resume', resumeFile);
+      fd.append('coverLetter', coverLetter);
+      await applyToJob(fd);
+      onSuccess?.();
+      onClose();
+    } catch (err) {
+      setError(err.message);
     } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleClose = (val) => {
-    if (!submitting) {
-      onOpenChange(val);
-      setFile(null);
-      setError("");
-      setSuccess(false);
+      setLoading(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>
-            Apply for{" "}
-            <span className="text-indigo-600">{job?.title ?? "this job"}</span>
-          </DialogTitle>
-        </DialogHeader>
-
-        {success ? (
-          <div className="flex flex-col items-center py-8 gap-3 text-green-600">
-            <CheckCircle size={48} />
-            <p className="font-medium text-lg">Application Submitted!</p>
+    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal-box">
+        <div className="modal-header">
+          <div>
+            <h2 className="modal-title">Apply to {job.title}</h2>
+            <p className="modal-subtitle">{job.company || job.recruiter?.company} · {job.location}</p>
           </div>
-        ) : (
-          <>
-            {/* Dropzone */}
-            <div
-              {...getRootProps()}
-              className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200 ${
-                isDragActive
-                  ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20"
-                  : "border-gray-300 hover:border-indigo-400 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700/50"
-              }`}
-            >
+          <button className="btn btn-ghost btn-icon" onClick={onClose}>
+            <X size={18} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="modal-body">
+          {/* Resume upload */}
+          <div className="input-group">
+            <label className="input-label">Resume *</label>
+            <div {...getRootProps()} className={`dropzone${isDragActive ? ' active' : ''}${resumeFile ? ' has-file' : ''}`}>
               <input {...getInputProps()} />
-              {file ? (
-                <div className="flex items-center justify-center gap-3">
-                  <FileText size={24} className="text-indigo-600" />
-                  <span className="font-medium text-sm">{file.name}</span>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeFile();
-                    }}
-                    className="text-gray-400 hover:text-red-500 transition-colors"
-                  >
-                    <X size={18} />
+              {resumeFile ? (
+                <div className="dropzone-file">
+                  <FileText size={20} color="var(--primary)" />
+                  <span>{resumeFile.name}</span>
+                  <button type="button" className="btn btn-ghost btn-icon" onClick={(e) => { e.stopPropagation(); setResumeFile(null); }}>
+                    <X size={14} />
                   </button>
                 </div>
               ) : (
-                <div className="flex flex-col items-center gap-2 text-gray-500">
-                  <Upload size={32} className="text-indigo-400" />
-                  <p className="text-sm font-medium">
-                    {isDragActive
-                      ? "Drop your PDF here…"
-                      : "Drag & drop your resume, or click to browse"}
-                  </p>
-                  <p className="text-xs text-gray-400">PDF only, max 5 MB</p>
+                <div className="dropzone-empty">
+                  <Upload size={24} color="var(--gray-400)" />
+                  <p><strong>Drop your resume here</strong> or click to browse</p>
+                  <span>PDF, DOC, DOCX · Max 5 MB</span>
                 </div>
               )}
             </div>
+          </div>
 
-            {error && (
-              <p className="text-red-600 text-sm mt-2" role="alert">
-                {error}
-              </p>
-            )}
+          {/* Cover letter */}
+          <div className="input-group">
+            <label className="input-label" htmlFor="coverLetter">Cover Letter <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+            <textarea
+              id="coverLetter"
+              className="input"
+              placeholder="Tell the recruiter why you're a great fit..."
+              value={coverLetter}
+              onChange={(e) => setCoverLetter(e.target.value)}
+              rows={5}
+            />
+          </div>
 
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => handleClose(false)}
-                disabled={submitting}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleSubmit} disabled={submitting}>
-                {submitting ? (
-                  <span className="flex items-center gap-2">
-                    <svg
-                      className="animate-spin h-4 w-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                      />
-                    </svg>
-                    Submitting…
-                  </span>
-                ) : (
-                  "Submit Application"
-                )}
-              </Button>
-            </DialogFooter>
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
+          {error && (
+            <div className="alert alert-error">
+              <AlertCircle size={16} />
+              {error}
+            </div>
+          )}
+
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={loading}>
+              {loading ? <><span className="spinner" />Submitting…</> : 'Submit Application'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }

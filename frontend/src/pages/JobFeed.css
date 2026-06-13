@@ -1,0 +1,68 @@
+.feed-header {
+  margin-bottom: var(--space-6);
+}
+.feed-header h1 { font-size: 1.875rem; }
+.feed-header p { color: var(--text-secondary); margin-top: 4px; }
+
+.feed-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.feed-filters {
+  margin-bottom: var(--space-5);
+  padding: var(--space-5);
+}
+.feed-filters-inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.filter-row {
+  display: flex;
+  gap: var(--space-4);
+}
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.filter-chip {
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+  text-transform: capitalize;
+}
+.filter-chip:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+.filter-chip.active { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+
+.jobs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-5);
+  margin-top: var(--space-4);
+}
+
+.feed-loading {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-16) 0;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  margin-top: var(--space-10);
+}
+.pagination-info { font-size: 0.875rem; color: var(--text-secondary); }

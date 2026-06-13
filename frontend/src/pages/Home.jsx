@@ -1,105 +1,198 @@
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { ArrowRight, Sparkles, Briefcase, Users, LayoutDashboard } from 'lucide-react';
+import { useUser } from '@clerk/clerk-react';
+import { ArrowRight, Briefcase, Users, Zap, Star, CheckCircle } from 'lucide-react';
+import Navbar from '@/components/Navbar';
+import './Home.css';
 
-export function Home() {
+const STATS = [
+  { value: '50K+', label: 'Jobs Listed' },
+  { value: '12K+', label: 'Companies' },
+  { value: '200K+', label: 'Job Seekers' },
+  { value: '95%', label: 'Placement Rate' },
+];
+
+const FEATURES = [
+  {
+    icon: <Zap size={22} />,
+    title: 'AI-Powered Matching',
+    desc: 'Our algorithm matches your skills to the perfect roles instantly.',
+  },
+  {
+    icon: <Briefcase size={22} />,
+    title: 'Curated Opportunities',
+    desc: 'Every listing is verified and updated in real time.',
+  },
+  {
+    icon: <Users size={22} />,
+    title: 'Direct Recruiter Access',
+    desc: 'Connect directly with hiring managers, no middleman.',
+  },
+];
+
+const TESTIMONIALS = [
+  { name: 'Sarah Chen', role: 'Software Engineer at Google', quote: 'Found my dream job in 2 weeks. The kanban tracking was so helpful!', avatar: 'SC' },
+  { name: 'Marcus Webb', role: 'Product Manager at Stripe', quote: 'The AI matching saved me hours of scrolling through irrelevant listings.', avatar: 'MW' },
+  { name: 'Priya Nair', role: 'UX Designer at Figma', quote: 'As a recruiter, the kanban board is a game changer for tracking applicants.', avatar: 'PN' },
+];
+
+export default function Home() {
+  const { user } = useUser();
+  const role = user?.publicMetadata?.role;
+  const dashboardLink = role === 'recruiter' ? '/recruiter/dashboard' : role === 'candidate' ? '/candidate/feed' : null;
+
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 font-sans text-gray-900 dark:text-gray-100 selection:bg-indigo-200 dark:selection:bg-indigo-900">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="bg-indigo-600 p-1.5 rounded-lg">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-bold text-xl tracking-tight">AI Portal</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link to="/sign-in" className="text-sm font-medium hover:text-indigo-600 transition-colors">
-              Sign In
-            </Link>
-            <Link to="/register">
-              <Button className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20">
-                Get Started
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </nav>
+    <div className="home-root">
+      <Navbar />
 
-      {/* Hero Section */}
-      <main className="relative pt-32 pb-16 sm:pt-40 sm:pb-24 overflow-hidden">
-        {/* Background Gradients */}
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-100 via-white to-white dark:from-indigo-950/20 dark:via-gray-950 dark:to-gray-950"></div>
-        
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-sm font-medium mb-8 border border-indigo-100 dark:border-indigo-800/50">
-            <Sparkles className="w-4 h-4" />
-            <span>AI-Powered Matching Engine</span>
+      {/* Hero */}
+      <section className="hero">
+        <div className="hero-content">
+          <div className="hero-badge">
+            <Star size={13} fill="currentColor" />
+            <span>Trusted by 200,000+ professionals</span>
           </div>
-          
-          <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight mb-8">
-            Hire Smarter. <br className="hidden sm:block" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">
-              Find Work Faster.
-            </span>
+          <h1 className="hero-headline">
+            Find Your Next<br />
+            <span className="hero-gradient">Dream Career</span>
           </h1>
-          
-          <p className="max-w-2xl mx-auto text-lg sm:text-xl text-gray-500 dark:text-gray-400 mb-10 leading-relaxed">
-            The next generation job portal powered by advanced AI algorithms. 
-            We instantly match top candidates with the right companies through intelligent resume scoring and adaptive workflows.
+          <p className="hero-sub">
+            TalentBridge connects ambitious professionals with world-class companies using AI-powered job matching, real-time application tracking, and direct recruiter access.
           </p>
-          
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link to="/register">
-              <Button size="lg" className="w-full sm:w-auto text-base h-12 px-8 bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 group">
-                Join as Candidate
-                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </Link>
-            <Link to="/register">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto text-base h-12 px-8 border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900">
-                I'm a Recruiter
-              </Button>
-            </Link>
+          <div className="hero-cta">
+            {dashboardLink ? (
+              <Link to={dashboardLink} className="btn btn-primary btn-lg">
+                Go to Dashboard <ArrowRight size={16} />
+              </Link>
+            ) : (
+              <>
+                <Link to="/register" className="btn btn-primary btn-lg">
+                  Get started free <ArrowRight size={16} />
+                </Link>
+                <Link to="/sign-in" className="btn btn-secondary btn-lg">
+                  Sign in
+                </Link>
+              </>
+            )}
+          </div>
+          <div className="hero-checks">
+            {['No credit card required', 'Free for job seekers', 'Cancel anytime'].map((t) => (
+              <span key={t} className="hero-check">
+                <CheckCircle size={14} color="var(--success)" />
+                {t}
+              </span>
+            ))}
           </div>
         </div>
 
-        {/* Feature Grid */}
-        <div className="max-w-7xl mx-auto px-6 mt-32">
-          <div className="grid sm:grid-cols-3 gap-8">
-            <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center mb-6">
-                <Briefcase className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Smart Job Feed</h3>
-              <p className="text-gray-500 dark:text-gray-400 leading-relaxed">
-                Candidates get highly relevant job recommendations based on their skills and preferences, filtered dynamically.
-              </p>
+        {/* Floating job card preview */}
+        <div className="hero-visual">
+          <div className="hero-card card">
+            <div className="hero-card-header">
+              <div className="hero-card-dot" style={{ background: '#2563eb' }} />
+              <span className="hero-card-label">Latest Opening</span>
             </div>
-
-            <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl flex items-center justify-center mb-6">
-                <LayoutDashboard className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Recruiter Kanban</h3>
-              <p className="text-gray-500 dark:text-gray-400 leading-relaxed">
-                Manage your hiring pipeline effortlessly with our drag-and-drop Kanban board designed for speed.
-              </p>
+            <h3 style={{ fontSize: '1.125rem' }}>Senior Product Designer</h3>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Airbnb · San Francisco, CA</p>
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+              <span className="badge badge-blue">Full-time</span>
+              <span className="badge badge-green">Remote OK</span>
             </div>
-
-            <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 bg-violet-50 dark:bg-violet-900/20 rounded-xl flex items-center justify-center mb-6">
-                <Users className="w-6 h-6 text-violet-600 dark:text-violet-400" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">AI Resume Scoring</h3>
-              <p className="text-gray-500 dark:text-gray-400 leading-relaxed">
-                Automatically score and rank incoming applications using our Python-powered AI microservice.
-              </p>
+            <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--primary)' }}>$120k – $180k</span>
+              <span className="btn btn-primary btn-sm">Apply Now</span>
             </div>
           </div>
+          <div className="hero-float-badge">
+            <span>🎉</span>
+            <span>142 new jobs today</span>
+          </div>
         </div>
-      </main>
+      </section>
+
+      {/* Stats */}
+      <section className="stats-section">
+        <div className="container">
+          <div className="stats-grid">
+            {STATS.map((s) => (
+              <div key={s.label} className="stat-item">
+                <span className="stat-value">{s.value}</span>
+                <span className="stat-label">{s.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="features-section">
+        <div className="container">
+          <div className="section-header">
+            <h2>Why TalentBridge?</h2>
+            <p>Everything you need to find your next opportunity — or your next great hire.</p>
+          </div>
+          <div className="features-grid">
+            {FEATURES.map((f) => (
+              <div key={f.title} className="feature-card card">
+                <div className="feature-icon">{f.icon}</div>
+                <h3 className="feature-title">{f.title}</h3>
+                <p className="feature-desc">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="testimonials-section">
+        <div className="container">
+          <div className="section-header">
+            <h2>Loved by professionals</h2>
+            <p>Don't take our word for it — hear from the people who've landed great roles.</p>
+          </div>
+          <div className="testimonials-grid">
+            {TESTIMONIALS.map((t) => (
+              <div key={t.name} className="testimonial-card card">
+                <p className="testimonial-quote">"{t.quote}"</p>
+                <div className="testimonial-author">
+                  <div className="testimonial-avatar">{t.avatar}</div>
+                  <div>
+                    <p className="testimonial-name">{t.name}</p>
+                    <p className="testimonial-role">{t.role}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="cta-section">
+        <div className="container">
+          <div className="cta-box">
+            <h2>Ready to find your next chapter?</h2>
+            <p>Join thousands of professionals who found their dream role through TalentBridge.</p>
+            <Link to="/register" className="btn btn-primary btn-lg">
+              Create free account <ArrowRight size={16} />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="home-footer">
+        <div className="container">
+          <div className="footer-inner">
+            <span className="navbar-logo" style={{ fontSize: '1rem' }}>
+              <Briefcase size={18} />
+              TalentBridge
+            </span>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+              © {new Date().getFullYear()} TalentBridge. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -1,0 +1,33 @@
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
+  padding: var(--space-8) var(--space-6);
+  background: var(--bg-subtle);
+}
+
+.auth-brand {
+  text-align: center;
+}
+
+.auth-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--primary);
+  margin-bottom: var(--space-4);
+}
+
+.auth-headline {
+  font-size: 1.75rem;
+  margin-bottom: var(--space-2);
+}
+
+.auth-sub {
+  color: var(--text-secondary);
+}

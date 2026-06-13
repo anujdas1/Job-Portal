@@ -1,0 +1,28 @@
+/* src/styles/tokens.css */
+/* Glassmorphism and animation utilities */
+
+/* Glass background (light) */
+.glass-md {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 0.75rem; /* 12px */
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Glass background (dark) */
+.dark .glass-md {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Micro‑animation utilities */
+.transition-fade {
+  transition: opacity 0.15s ease-out;
+}
+.transition-scale {
+  transition: transform 0.15s ease-out;
+}
+.hover\:scale-105:hover {
+  transform: scale(1.05);
+}

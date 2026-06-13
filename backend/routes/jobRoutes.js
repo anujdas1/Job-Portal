@@ -1,45 +1,24 @@
-// routes/jobRoutes.js
 const express = require('express');
-const { body } = require('express-validator');
-const {
-  listJobs,
-  getJob,
-  createJob,
-  updateJob,
-  deleteJob,
-} = require('../controllers/jobController');
-const { verifyToken, requireRole } = require('../middlewares/auth');
-
 const router = express.Router();
+const { requireAuth } = require('@clerk/express');
+const { attachUser, requireRole } = require('../middlewares/authMiddleware');
+const ctrl = require('../controllers/jobController');
 
-// Public read routes
-router.get('/', listJobs);
-router.get('/:id', getJob);
+/**
+ * @swagger
+ * tags:
+ *   name: Jobs
+ *   description: Job listings management
+ */
 
-// Recruiter‑only write routes
-router.post(
-  '/',
-  verifyToken,
-  requireRole('recruiter'),
-  [
-    body('title').notEmpty(),
-    body('description').notEmpty(),
-    body('location').notEmpty(),
-    // optional salaryRange, tags can be validated as needed
-  ],
-  createJob
-);
-router.put(
-  '/:id',
-  verifyToken,
-  requireRole('recruiter'),
-  [
-    body('title').optional().notEmpty(),
-    body('description').optional().notEmpty(),
-    body('location').optional().notEmpty(),
-  ],
-  updateJob
-);
-router.delete('/:id', verifyToken, requireRole('recruiter'), deleteJob);
+// Public
+router.get('/', ctrl.listJobs);
+router.get('/my', requireAuth(), attachUser, requireRole('recruiter'), ctrl.myJobs);
+router.get('/:id', ctrl.getJob);
+
+// Recruiter only
+router.post('/', requireAuth(), attachUser, requireRole('recruiter'), ctrl.createJob);
+router.put('/:id', requireAuth(), attachUser, requireRole('recruiter'), ctrl.updateJob);
+router.delete('/:id', requireAuth(), attachUser, requireRole('recruiter'), ctrl.deleteJob);
 
 module.exports = router;

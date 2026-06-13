@@ -1,125 +1,156 @@
 import { useEffect, useState } from 'react';
+import { Search, SlidersHorizontal, X } from 'lucide-react';
 import useJobStore from '@/store/useJobStore';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
+import useApplicationStore from '@/store/useApplicationStore';
+import { useUser } from '@clerk/clerk-react';
+import JobCard from '@/components/JobCard';
 import ApplicationModal from '@/components/ApplicationModal';
+import './JobFeed.css';
+
+const JOB_TYPES = ['full-time', 'part-time', 'remote', 'contract', 'internship'];
+const EXP_LEVELS = ['entry', 'mid', 'senior', 'lead', 'executive'];
 
 export default function JobFeed() {
-  const { fetchJobs, loading, error, filteredJobs, setFilters, filters } = useJobStore((state) => ({
-    fetchJobs: state.fetchJobs,
-    loading: state.loading,
-    error: state.error,
-    filteredJobs: state.filteredJobs,
-    setFilters: state.setFilters,
-    filters: state.filters,
-  }));
-
-  const [selectedJob, setSelectedJob] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { jobs, total, page, pages, loading, filters, fetchJobs, setFilter, resetFilters, setPage } = useJobStore();
+  const { fetchSavedIds } = useApplicationStore();
+  const { user } = useUser();
+  const [applyJob, setApplyJob] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [appliedSuccess, setAppliedSuccess] = useState(false);
 
   useEffect(() => {
     fetchJobs();
-  }, [fetchJobs]);
+    fetchSavedIds();
+  }, [filters, page]);
 
-  const handleLocationChange = (value) => {
-    setFilters({ location: value });
-  };
-  const handleSalaryChange = ([min, max]) => {
-    setFilters({ salaryMin: min, salaryMax: max });
-  };
-  const handleTagChange = (value) => {
-    setFilters({ tags: value });
-  };
-
-  const salaryRange = [filters.salaryMin || 0, filters.salaryMax || 200000];
-
-  const openApplyModal = (job) => {
-    setSelectedJob(job);
-    setIsModalOpen(true);
-  };
+  const handleSearch = (e) => { e.preventDefault(); setPage(1); fetchJobs(); };
+  const handleApplySuccess = () => { setAppliedSuccess(true); setTimeout(() => setAppliedSuccess(false), 4000); };
 
   return (
-    <div className="flex gap-6">
-      {/* Filter sidebar */}
-      <aside className="w-64 p-4 bg-white dark:bg-gray-800 rounded shadow">
-        <h2 className="text-lg font-semibold mb-4">Filters</h2>
-        {/* Location */}
-        <div className="mb-4">
-          <Select onValueChange={handleLocationChange}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Location" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Remote">Remote</SelectItem>
-              <SelectItem value="NYC">NYC</SelectItem>
-              <SelectItem value="London">London</SelectItem>
-            </SelectContent>
-          </Select>
+    <div className="page-content page-enter">
+      {/* Page header */}
+      <div className="feed-header">
+        <div>
+          <h1>Find Your Next Role</h1>
+          <p>{total} open positions available</p>
         </div>
-        {/* Salary */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">Salary Range</label>
-          <Slider
-            min={0}
-            max={200000}
-            step={5000}
-            value={salaryRange}
-            onValueChange={handleSalaryChange}
-            className="w-full"
+      </div>
+
+      {/* Search bar */}
+      <form className="feed-search" onSubmit={handleSearch}>
+        <div className="input-with-icon" style={{ flex: 1 }}>
+          <Search size={16} className="input-icon" />
+          <input
+            className="input"
+            placeholder="Search jobs, skills, companies…"
+            value={filters.q}
+            onChange={(e) => setFilter('q', e.target.value)}
           />
-          <div className="text-sm mt-1">
-            {salaryRange[0]} – {salaryRange[1]}
+        </div>
+        <div className="input-with-icon" style={{ width: 220 }}>
+          <Search size={16} className="input-icon" style={{ opacity: 0 }} />
+          <input
+            className="input"
+            placeholder="Location"
+            value={filters.location}
+            onChange={(e) => setFilter('location', e.target.value)}
+          />
+        </div>
+        <button type="submit" className="btn btn-primary">Search</button>
+        <button type="button" className="btn btn-secondary btn-icon" onClick={() => setShowFilters(!showFilters)}>
+          <SlidersHorizontal size={16} />
+        </button>
+      </form>
+
+      {/* Filters panel */}
+      {showFilters && (
+        <div className="feed-filters card">
+          <div className="feed-filters-inner">
+            <div className="input-group">
+              <label className="input-label">Job Type</label>
+              <div className="filter-chips">
+                {JOB_TYPES.map((t) => (
+                  <button
+                    key={t}
+                    className={`filter-chip${filters.type === t ? ' active' : ''}`}
+                    onClick={() => setFilter('type', filters.type === t ? '' : t)}
+                  >
+                    {t.replace('-', ' ')}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="input-group">
+              <label className="input-label">Experience Level</label>
+              <div className="filter-chips">
+                {EXP_LEVELS.map((l) => (
+                  <button
+                    key={l}
+                    className={`filter-chip${filters.experienceLevel === l ? ' active' : ''}`}
+                    onClick={() => setFilter('experienceLevel', filters.experienceLevel === l ? '' : l)}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="filter-row">
+              <div className="input-group" style={{ flex: 1 }}>
+                <label className="input-label">Min Salary (USD)</label>
+                <input className="input" type="number" placeholder="e.g. 60000" value={filters.salaryMin} onChange={(e) => setFilter('salaryMin', e.target.value)} />
+              </div>
+              <div className="input-group" style={{ flex: 1 }}>
+                <label className="input-label">Max Salary (USD)</label>
+                <input className="input" type="number" placeholder="e.g. 150000" value={filters.salaryMax} onChange={(e) => setFilter('salaryMax', e.target.value)} />
+              </div>
+            </div>
+            <button className="btn btn-ghost btn-sm" onClick={() => { resetFilters(); }}>
+              <X size={14} /> Reset filters
+            </button>
           </div>
         </div>
-        {/* Tags */}
-        <div className="mb-4">
-          <Select onValueChange={(val) => handleTagChange([val])}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Tags" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Frontend">Frontend</SelectItem>
-              <SelectItem value="Backend">Backend</SelectItem>
-              <SelectItem value="AI">AI</SelectItem>
-              <SelectItem value="Design">Design</SelectItem>
-            </SelectContent>
-          </Select>
+      )}
+
+      {/* Success banner */}
+      {appliedSuccess && (
+        <div className="alert alert-success">✅ Application submitted successfully! Good luck!</div>
+      )}
+
+      {/* Grid */}
+      {loading ? (
+        <div className="feed-loading">
+          <div className="spinner spinner-lg" />
         </div>
-        <Button onClick={() => setFilters({ location: '', salaryMin: 0, salaryMax: 0, tags: [] })}>
-          Clear Filters
-        </Button>
-      </aside>
+      ) : jobs.length === 0 ? (
+        <div className="empty-state">
+          <Search size={48} color="var(--gray-300)" />
+          <h3>No jobs found</h3>
+          <p>Try adjusting your search or filters.</p>
+          <button className="btn btn-secondary" onClick={resetFilters}>Clear filters</button>
+        </div>
+      ) : (
+        <div className="jobs-grid">
+          {jobs.map((job) => (
+            <JobCard key={job._id} job={job} onApply={setApplyJob} />
+          ))}
+        </div>
+      )}
 
-      {/* Job cards */}
-      <section className="flex-1 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {loading && <p className="col-span-full text-center">Loading jobs…</p>}
-        {error && <p className="col-span-full text-center text-red-600">{error}</p>}
-        {filteredJobs.map((job) => (
-          <Card key={job._id} className="p-4 flex flex-col justify-between">
-            <CardHeader>
-              <CardTitle>{job.title}</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1">
-              <p className="text-sm mb-2">
-                Salary: ${job.salaryRange?.min?.toLocaleString() || 'N/A'} - ${job.salaryRange?.max?.toLocaleString() || 'N/A'}
-              </p>
-              <p className="text-sm text-gray-500">{job.tags?.join(', ')}</p>
-            </CardContent>
-            <Button className="mt-2 w-full" onClick={() => openApplyModal(job)}>
-              Apply
-            </Button>
-          </Card>
-        ))}
-      </section>
+      {/* Pagination */}
+      {pages > 1 && (
+        <div className="pagination">
+          <button className="btn btn-secondary btn-sm" disabled={page === 1} onClick={() => setPage(page - 1)}>Previous</button>
+          <span className="pagination-info">Page {page} of {pages}</span>
+          <button className="btn btn-secondary btn-sm" disabled={page === pages} onClick={() => setPage(page + 1)}>Next</button>
+        </div>
+      )}
 
-      {/* Application Modal */}
-      {selectedJob && (
+      {/* Apply modal */}
+      {applyJob && (
         <ApplicationModal
-          job={selectedJob}
-          open={isModalOpen}
-          onOpenChange={setIsModalOpen}
+          job={applyJob}
+          onClose={() => setApplyJob(null)}
+          onSuccess={handleApplySuccess}
         />
       )}
     </div>

@@ -1,34 +1,17 @@
-// routes/userRoutes.js
 const express = require('express');
-const { body } = require('express-validator');
-const { register, login, getMe } = require('../controllers/userController');
-const { verifyToken } = require('../middlewares/auth');
-
 const router = express.Router();
+const { requireAuth } = require('@clerk/express');
+const { attachUser } = require('../middlewares/authMiddleware');
+const upload = require('../middlewares/upload');
+const ctrl = require('../controllers/userController');
 
-// Register new user
-router.post(
-  '/register',
-  [
-    body('email').isEmail(),
-    body('password').isLength({ min: 6 }),
-    body('name').notEmpty(),
-    body('role').isIn(['candidate', 'recruiter']),
-  ],
-  register
-);
+// All routes require auth
+router.use(requireAuth(), attachUser);
 
-// Login existing user
-router.post(
-  '/login',
-  [
-    body('email').isEmail(),
-    body('password').notEmpty(),
-  ],
-  login
-);
-
-// Get current authenticated user info
-router.get('/me', verifyToken, getMe);
+router.get('/me', ctrl.getProfile);
+router.put('/me', ctrl.updateProfile);
+router.put('/me/resume', upload.single('resume'), ctrl.updateResume);
+router.post('/set-role', ctrl.setRole);
+router.get('/:id', ctrl.getPublicProfile);
 
 module.exports = router;

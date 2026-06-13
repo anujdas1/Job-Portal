@@ -5,18 +5,13 @@ import path from 'node:path';
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src')
-    }
+    alias: { '@': path.resolve(__dirname, './src') },
   },
   server: {
     port: 5173,
     proxy: {
-      '/api': {
-        target: 'http://localhost:5003',
-        changeOrigin: true,
-        secure: false,
-      }
-    }
-  }
+      '/api': { target: 'http://localhost:5004', changeOrigin: true, secure: false },
+      '/uploads': { target: 'http://localhost:5004', changeOrigin: true, secure: false },
+    },
+  },
 });

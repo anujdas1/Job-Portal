@@ -1,18 +1,32 @@
-// middlewares/errorHandler.js
 /**
- * Centralized error‑handling middleware for Express.
- * Captures both synchronous errors (thrown) and asynchronous ones (rejected promises passed to next()).
- * Returns a JSON response in the shape { success: false, error: <msg>, statusCode: <code> }.
+ * Global error handler middleware.
+ * Must be registered last in Express (after all routes).
  */
-const errorHandler = (err, _req, res, _next) => {
-  console.error('Unhandled error:', err);
-  const status = err.statusCode || err.status || 500;
-  const message = err.message || 'Internal Server Error';
+function errorHandler(err, req, res, next) {
+  console.error('[Error]', err.stack || err.message);
+
+  // Mongoose validation error
+  if (err.name === 'ValidationError') {
+    const messages = Object.values(err.errors).map((e) => e.message);
+    return res.status(400).json({ error: 'Validation failed', details: messages });
+  }
+
+  // Mongoose duplicate key
+  if (err.code === 11000) {
+    const field = Object.keys(err.keyValue || {})[0] || 'field';
+    return res.status(409).json({ error: `Duplicate value for ${field}` });
+  }
+
+  // JWT / Clerk auth errors
+  if (err.status === 401 || err.message?.toLowerCase().includes('unauthorized')) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  // Generic server error
+  const status = err.status || err.statusCode || 500;
   res.status(status).json({
-    success: false,
-    error: message,
-    statusCode: status,
+    error: err.message || 'Internal server error',
   });
-};
+}
 
 module.exports = errorHandler;

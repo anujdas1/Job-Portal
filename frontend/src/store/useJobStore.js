@@ -1,72 +1,33 @@
 import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
-import { immer } from 'zustand/middleware/immer';
-import api from '@/api/axiosClient';
+import { getJobs } from '@/api/jobs';
 
-// -------------------------------------------------------------------
-// Zustand store for job feed state & filters
-// -------------------------------------------------------------------
-const useJobStore = create(
-  devtools(
-    immer((set, get) => ({
-      // ---------------------------------------------------------------
-      // State
-      // ---------------------------------------------------------------
-      jobs: [],               // raw job list from backend
-      loading: false,        // loading flag for fetchJobs
-      error: null,           // error message if fetch fails
-      filters: {
-        location: '',
-        salaryMin: 0,
-        salaryMax: 0,
-        tags: [], // array of tag strings
-      },
+const useJobStore = create((set, get) => ({
+  jobs: [],
+  total: 0,
+  page: 1,
+  pages: 1,
+  loading: false,
+  error: null,
+  filters: { q: '', type: '', location: '', salaryMin: '', salaryMax: '', experienceLevel: '' },
 
-      // ---------------------------------------------------------------
-      // Actions
-      // ---------------------------------------------------------------
-      fetchJobs: async () => {
-        set((state) => {
-          state.loading = true;
-          state.error = null;
-        });
-        try {
-          const response = await api.get('/api/jobs'); // adjust endpoint as needed
-          set((state) => {
-            state.jobs = response.data;
-          });
-        } catch (err) {
-          set((state) => {
-            state.error = err?.message ?? 'Failed to load jobs';
-          });
-        } finally {
-          set((state) => {
-            state.loading = false;
-          });
-        }
-      },
+  setFilter: (key, value) =>
+    set((s) => ({ filters: { ...s.filters, [key]: value } })),
 
-      setFilters: (newFilters) => {
-        set((state) => {
-          state.filters = { ...state.filters, ...newFilters };
-        });
-      },
+  resetFilters: () =>
+    set({ filters: { q: '', type: '', location: '', salaryMin: '', salaryMax: '', experienceLevel: '' }, page: 1 }),
 
-      // ---------------------------------------------------------------
-      // Computed selector – filtered jobs based on active filters
-      // ---------------------------------------------------------------
-      get filteredJobs() {
-        const { jobs, filters } = get();
-        return jobs.filter((job) => {
-          if (filters.location && job.location !== filters.location) return false;
-          if (filters.salaryMin && job.salaryRange?.min && job.salaryRange.min < filters.salaryMin) return false;
-          if (filters.salaryMax && job.salaryRange?.max && job.salaryRange.max > filters.salaryMax) return false;
-          if (filters.tags.length && !filters.tags.every((t) => job.tags?.includes(t))) return false;
-          return true;
-        });
-      },
-    }))
-  )
-);
+  setPage: (page) => set({ page }),
+
+  fetchJobs: async () => {
+    const { filters, page } = get();
+    set({ loading: true, error: null });
+    try {
+      const data = await getJobs({ ...filters, page, limit: 12 });
+      set({ jobs: data.jobs, total: data.total, pages: data.pages, loading: false });
+    } catch (err) {
+      set({ error: err.message, loading: false });
+    }
+  },
+}));
 
 export default useJobStore;

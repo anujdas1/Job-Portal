@@ -1,67 +1,84 @@
-// controllers/userController.js
 const User = require('../models/User');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const { clerkClient } = require('@clerk/express');
 
 /**
- * Register a new user.
- * Expected body: { email, password, name, role }
+ * GET /api/users/me
+ * Get own profile
  */
-exports.register = async (req, res, next) => {
+exports.getProfile = async (req, res) => {
+  res.json(req.dbUser);
+};
+
+/**
+ * PUT /api/users/me
+ * Update own profile
+ */
+exports.updateProfile = async (req, res, next) => {
   try {
-    const { email, password, name, role } = req.body;
-    if (!email || !password || !name || !role) {
-      return res.status(400).json({ success: false, error: 'Missing required fields', statusCode: 400 });
-    }
-    const existing = await User.findOne({ email });
-    if (existing) {
-      return res.status(409).json({ success: false, error: 'User already exists', statusCode: 409 });
-    }
-    const user = new User({ email, name, role });
-    await user.setPassword(password);
-    await user.save();
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.status(201).json({ success: true, data: { token, user: { id: user._id, email: user.email, name: user.name, role: user.role } } });
+    const allowed = [
+      'name', 'bio', 'skills', 'location', 'linkedin', 'github', 'portfolio',
+      'company', 'companyLogo', 'companyWebsite', 'companySize', 'industry',
+    ];
+    const updates = {};
+    allowed.forEach((key) => {
+      if (req.body[key] !== undefined) updates[key] = req.body[key];
+    });
+
+    const user = await User.findByIdAndUpdate(req.dbUser._id, updates, { new: true, runValidators: true });
+    res.json(user);
   } catch (err) {
     next(err);
   }
 };
 
 /**
- * Login existing user.
- * Expected body: { email, password }
+ * PUT /api/users/me/resume
+ * Upload / update resume URL
  */
-exports.login = async (req, res, next) => {
+exports.updateResume = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ success: false, error: 'Missing email or password', statusCode: 400 });
-    }
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(401).json({ success: false, error: 'Invalid credentials', statusCode: 401 });
-    }
-    const valid = await user.validatePassword(password);
-    if (!valid) {
-      return res.status(401).json({ success: false, error: 'Invalid credentials', statusCode: 401 });
-    }
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.json({ success: true, data: { token, user: { id: user._id, email: user.email, name: user.name, role: user.role } } });
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    const resumeUrl = `/uploads/${req.file.filename}`;
+    const user = await User.findByIdAndUpdate(req.dbUser._id, { resumeUrl }, { new: true });
+    res.json({ resumeUrl: user.resumeUrl });
   } catch (err) {
     next(err);
   }
 };
 
 /**
- * Get current authenticated user info.
+ * POST /api/users/set-role
+ * Set role (candidate/recruiter) after registration
  */
-exports.getMe = async (req, res, next) => {
+exports.setRole = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id).select('-passwordHash');
-    if (!user) {
-      return res.status(404).json({ success: false, error: 'User not found', statusCode: 404 });
+    const { role } = req.body;
+    if (!['candidate', 'recruiter'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role' });
     }
-    res.json({ success: true, data: user });
+
+    const user = await User.findByIdAndUpdate(req.dbUser._id, { role }, { new: true });
+
+    // Sync role to Clerk public metadata
+    await clerkClient.users.updateUserMetadata(req.dbUser.clerkId, {
+      publicMetadata: { role },
+    });
+
+    res.json(user);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * GET /api/users/:id
+ * Public - get any user's public profile
+ */
+exports.getPublicProfile = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id).select('-clerkId');
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(user);
   } catch (err) {
     next(err);
   }
