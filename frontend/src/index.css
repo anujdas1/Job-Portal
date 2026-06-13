@@ -8,12 +8,12 @@
 /* ── CSS Custom Properties ─────────────────────────────────── */
 :root {
   /* Color Palette */
-  --primary: #2563eb;
-  --primary-dark: #1d4ed8;
-  --primary-light: #eff6ff;
-  --primary-muted: #bfdbfe;
+  --primary: #dc2626;
+  --primary-dark: #b91c1c;
+  --primary-light: #fef2f2;
+  --primary-muted: #fecaca;
 
-  --accent: #0ea5e9;
+  --accent: #ef4444;
   --success: #10b981;
   --warning: #f59e0b;
   --danger: #ef4444;
@@ -265,7 +265,7 @@ textarea.input { resize: vertical; min-height: 100px; }
   font-weight: 500;
   white-space: nowrap;
 }
-.badge-blue   { background: #eff6ff; color: #1d4ed8; }
+.badge-blue   { background: var(--primary-light); color: var(--primary); }
 .badge-green  { background: #ecfdf5; color: #059669; }
 .badge-yellow { background: #fffbeb; color: #b45309; }
 .badge-red    { background: #fef2f2; color: #b91c1c; }

@@ -3,7 +3,7 @@ import { useUser, useClerk } from '@clerk/clerk-react';
 import { Bell, LogOut, ChevronDown, Briefcase } from 'lucide-react';
 import useNotificationStore from '@/store/useNotificationStore';
 import NotificationDrawer from './NotificationDrawer';
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import './Navbar.css';
 
 export default function Navbar() {
@@ -11,12 +11,24 @@ export default function Navbar() {
   const { signOut } = useClerk();
   const navigate = useNavigate();
   const { unreadCount, fetch: fetchNotifications, open, setOpen } = useNotificationStore();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   const role = user?.publicMetadata?.role;
 
   useEffect(() => {
     if (user) fetchNotifications();
   }, [user]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSignOut = () => signOut(() => navigate('/'));
 
@@ -34,7 +46,10 @@ export default function Navbar() {
           { to: '/candidate/applications', label: 'Applications' },
           { to: '/candidate/profile', label: 'Profile' },
         ]
-      : [];
+      : [
+          { to: '/employers', label: 'For Employers' },
+          { to: '/candidates', label: 'For Candidates' },
+        ];
 
   return (
     <>
@@ -79,7 +94,7 @@ export default function Navbar() {
                 </button>
 
                 {/* User menu */}
-                <div className="navbar-user">
+                <div className="navbar-user" ref={dropdownRef} onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
                   <img
                     src={user.imageUrl}
                     alt={user.fullName}
@@ -87,7 +102,7 @@ export default function Navbar() {
                   />
                   <span className="navbar-username">{user.firstName}</span>
                   <ChevronDown size={14} className="navbar-chevron" />
-                  <div className="navbar-dropdown">
+                  <div className={`navbar-dropdown ${isDropdownOpen ? 'show' : ''}`}>
                     <button className="navbar-dropdown-item" onClick={handleSignOut}>
                       <LogOut size={14} />
                       Sign out

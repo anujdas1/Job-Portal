@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useUser } from '@clerk/clerk-react';
+import { useUser, useAuth } from '@clerk/clerk-react';
+import { useEffect } from 'react';
+import client from '@/api/client';
 
 // Layouts
 import CandidateLayout from '@/layouts/CandidateLayout';
@@ -7,7 +9,10 @@ import RecruiterLayout from '@/layouts/RecruiterLayout';
 
 // Public pages
 import Home from '@/pages/Home';
+import EmployersHome from '@/pages/EmployersHome';
+import CandidatesHome from '@/pages/CandidatesHome';
 import SignIn from '@/pages/SignIn';
+import SignUp from '@/pages/SignUp';
 import Register from '@/pages/Register';
 import NotFound from '@/pages/NotFound';
 
@@ -26,9 +31,9 @@ import RecruiterProfile from '@/pages/RecruiterProfile';
 
 /* ── Guards ────────────────────────────────────────────────── */
 function ProtectedRoute({ children }) {
-  const { isLoaded, userId } = useUser();
+  const { isLoaded, isSignedIn } = useUser();
   if (!isLoaded) return <div className="page-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="spinner spinner-lg" /></div>;
-  if (!userId) return <Navigate to="/sign-in" replace />;
+  if (!isSignedIn) return <Navigate to="/sign-in" replace />;
   return children;
 }
 
@@ -42,14 +47,45 @@ function RoleRoute({ role, children }) {
   return <Navigate to={userRole === 'recruiter' ? '/recruiter/dashboard' : '/candidate/feed'} replace />;
 }
 
+function AxiosInterceptor() {
+  const { getToken } = useAuth();
+  useEffect(() => {
+    const interceptor = client.interceptors.request.use(async (config) => {
+      try {
+        const token = await getToken();
+        if (token) config.headers.Authorization = `Bearer ${token}`;
+      } catch (err) {}
+      return config;
+    });
+    return () => client.interceptors.request.eject(interceptor);
+  }, [getToken]);
+  return null;
+}
+
+function RootRoute() {
+  const { user, isLoaded } = useUser();
+  if (!isLoaded) return <div className="page-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="spinner spinner-lg" /></div>;
+  if (!user) return <Home />;
+  
+  const userRole = user.publicMetadata?.role;
+  if (userRole === 'recruiter') return <Navigate to="/employers" replace />;
+  if (userRole === 'candidate') return <Navigate to="/candidates" replace />;
+  
+  return <Home />;
+}
+
 /* ── App ───────────────────────────────────────────────────── */
 export default function App() {
   return (
     <BrowserRouter>
+      <AxiosInterceptor />
       <Routes>
         {/* Public */}
-        <Route path="/" element={<Home />} />
-        <Route path="/sign-in" element={<SignIn />} />
+        <Route path="/" element={<RootRoute />} />
+        <Route path="/employers" element={<EmployersHome />} />
+        <Route path="/candidates" element={<CandidatesHome />} />
+        <Route path="/sign-in/*" element={<SignIn />} />
+        <Route path="/sign-up/*" element={<SignUp />} />
         <Route path="/register" element={<Register />} />
 
         {/* Candidate area */}

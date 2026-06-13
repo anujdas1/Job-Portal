@@ -7,5 +7,5 @@ export const updateResume = (file) => {
   fd.append('resume', file);
   return client.put('/users/me/resume', fd, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data);
 };
-export const setRole = (role) => client.post('/users/set-role', { role }).then((r) => r.data);
+export const setRole = (role, token, profileData = {}) => client.post('/users/set-role', { role, profileData }, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.data);
 export const getPublicProfile = (id) => client.get(`/users/${id}`).then((r) => r.data);

@@ -85,7 +85,6 @@
   transition: background var(--transition);
 }
 .navbar-user:hover { background: var(--gray-100); }
-.navbar-user:hover .navbar-dropdown { opacity: 1; pointer-events: all; transform: translateY(0); }
 
 .navbar-avatar {
   width: 32px; height: 32px;
@@ -117,6 +116,11 @@
   transition: all var(--transition);
   z-index: 200;
   overflow: hidden;
+}
+.navbar-dropdown.show {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateY(0);
 }
 
 .navbar-dropdown-item {

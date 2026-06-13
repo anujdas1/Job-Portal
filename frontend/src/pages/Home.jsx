@@ -11,6 +11,11 @@ const STATS = [
   { value: '95%', label: 'Placement Rate' },
 ];
 
+const COMPANIES = [
+  'Google', 'Microsoft', 'Apple', 'Meta', 'Amazon',
+  'Jane Street', 'Two Sigma', 'Citadel', 'Optiver', 'Renaissance Technologies'
+];
+
 const FEATURES = [
   {
     icon: <Zap size={22} />,
@@ -56,23 +61,15 @@ export default function Home() {
             <span className="hero-gradient">Dream Career</span>
           </h1>
           <p className="hero-sub">
-            TalentBridge connects ambitious professionals with world-class companies using AI-powered job matching, real-time application tracking, and direct recruiter access.
+            TalentBridge is the modern platform connecting ambitious professionals with world-class companies using AI-powered job matching.
           </p>
-          <div className="hero-cta">
-            {dashboardLink ? (
-              <Link to={dashboardLink} className="btn btn-primary btn-lg">
-                Go to Dashboard <ArrowRight size={16} />
-              </Link>
-            ) : (
-              <>
-                <Link to="/register" className="btn btn-primary btn-lg">
-                  Get started free <ArrowRight size={16} />
-                </Link>
-                <Link to="/sign-in" className="btn btn-secondary btn-lg">
-                  Sign in
-                </Link>
-              </>
-            )}
+          <div className="hero-cta" style={{ gap: '1rem' }}>
+            <Link to="/employers" className="btn btn-secondary btn-lg" style={{ flex: 1, justifyContent: 'center' }}>
+              I am an Employer
+            </Link>
+            <Link to="/candidates" className="btn btn-primary btn-lg" style={{ flex: 1, justifyContent: 'center' }}>
+              I am a Candidate
+            </Link>
           </div>
           <div className="hero-checks">
             {['No credit card required', 'Free for job seekers', 'Cancel anytime'].map((t) => (
@@ -105,6 +102,22 @@ export default function Home() {
           <div className="hero-float-badge">
             <span>🎉</span>
             <span>142 new jobs today</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Company Carousel */}
+      <section className="companies-section">
+        <div className="container">
+          <p className="companies-label">Trusted by top tech and quant firms</p>
+          <div className="carousel-wrapper">
+            <div className="carousel-track">
+              {[...COMPANIES, ...COMPANIES].map((company, i) => (
+                <div key={i} className="company-logo">
+                  {company}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -172,9 +185,15 @@ export default function Home() {
           <div className="cta-box">
             <h2>Ready to find your next chapter?</h2>
             <p>Join thousands of professionals who found their dream role through TalentBridge.</p>
-            <Link to="/register" className="btn btn-primary btn-lg">
-              Create free account <ArrowRight size={16} />
-            </Link>
+            {user ? (
+              <Link to={dashboardLink || '/register'} className="btn btn-primary btn-lg">
+                {dashboardLink ? 'Go to Dashboard' : 'Complete Setup'} <ArrowRight size={16} />
+              </Link>
+            ) : (
+              <Link to="/register" className="btn btn-primary btn-lg">
+                Create free account <ArrowRight size={16} />
+              </Link>
+            )}
           </div>
         </div>
       </section>

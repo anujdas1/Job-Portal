@@ -52,12 +52,21 @@ exports.updateResume = async (req, res, next) => {
  */
 exports.setRole = async (req, res, next) => {
   try {
-    const { role } = req.body;
+    const { role, profileData = {} } = req.body;
     if (!['candidate', 'recruiter'].includes(role)) {
       return res.status(400).json({ error: 'Invalid role' });
     }
 
-    const user = await User.findByIdAndUpdate(req.dbUser._id, { role }, { new: true });
+    const updates = { role };
+    const allowed = [
+      'name', 'bio', 'skills', 'location', 'linkedin', 'github', 'portfolio',
+      'company', 'companyLogo', 'companyWebsite', 'companySize', 'industry'
+    ];
+    allowed.forEach((key) => {
+      if (profileData[key] !== undefined) updates[key] = profileData[key];
+    });
+
+    const user = await User.findByIdAndUpdate(req.dbUser._id, updates, { new: true });
 
     // Sync role to Clerk public metadata
     await clerkClient.users.updateUserMetadata(req.dbUser.clerkId, {

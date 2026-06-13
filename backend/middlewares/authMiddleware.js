@@ -1,4 +1,4 @@
-const { clerkClient } = require('@clerk/express');
+const { clerkClient, getAuth } = require('@clerk/express');
 const User = require('../models/User');
 
 /**
@@ -7,9 +7,14 @@ const User = require('../models/User');
  */
 async function attachUser(req, res, next) {
   try {
-    const { userId } = req.auth || {};
+    const authData = getAuth(req);
+    const { userId } = authData || {};
+    
     if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      const authHeader = req.headers.authorization ? `${req.headers.authorization.substring(0, 15)}...` : 'Missing';
+      return res.status(401).json({ 
+        error: `Unauthorized: Missing userId in req.auth. AuthHeader: ${authHeader}` 
+      });
     }
 
     let user = await User.findOne({ clerkId: userId });

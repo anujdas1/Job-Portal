@@ -1,9 +1,9 @@
-import { SignIn as ClerkSignIn } from '@clerk/clerk-react';
+import { SignUp as ClerkSignUp } from '@clerk/clerk-react';
 import { Briefcase, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import './AuthPage.css';
 
-export default function SignIn() {
+export default function SignUp() {
   return (
     <div className="auth-page">
       <div className="auth-brand">
@@ -14,10 +14,10 @@ export default function SignIn() {
           <Briefcase size={28} />
           <span>TalentBridge</span>
         </Link>
-        <h1 className="auth-headline">Welcome back</h1>
-        <p className="auth-sub">Sign in to continue your job search.</p>
+        <h1 className="auth-headline">Create an Account</h1>
+        <p className="auth-sub">Sign up to start your journey.</p>
       </div>
-      <ClerkSignIn routing="path" path="/sign-in" signUpUrl="/sign-up" fallbackRedirectUrl="/register" />
+      <ClerkSignUp routing="path" path="/sign-up" signInUrl="/sign-in" fallbackRedirectUrl="/register" />
     </div>
   );
 }
